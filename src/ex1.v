@@ -20,10 +20,10 @@ Reserved Notation "A |-c s" (at level 70).
 (* Question 1.1.a. *)
 
 Inductive ndc : list form -> form -> Prop :=
-  | assm (A : list form) (s : form) : In s A -> ndc A s
-  | intr (A : list form) (s : form) (t : form) : ndc (s :: A) t -> ndc A (s ~> t)
-  | elim (A : list form) (s : form) (t : form) : ndc A (s ~> t) -> ndc A s -> ndc A t
-  | cntr (A : list form) (s : form) : ndc (neg s :: A) bot -> ndc A s.
+  | ndc_assm (A : list form) (s : form) : In s A -> ndc A s
+  | ndc_intr (A : list form) (s : form) (t : form) : ndc (s :: A) t -> ndc A (s ~> t)
+  | ndc_elim (A : list form) (s : form) (t : form) : ndc A (s ~> t) -> ndc A s -> ndc A t
+  | ndc_cntr (A : list form) (s : form) : ndc (neg s :: A) bot -> ndc A s.
 
 Notation "A |-c s" := (ndc A s) (at level 70).
 
@@ -32,8 +32,8 @@ Notation "A |-c s" := (ndc A s) (at level 70).
 Goal forall A s, A |-c s ~> s.
 Proof.
   intros A s.
-  apply intr.
-  apply assm.
+  apply ndc_intr.
+  apply ndc_assm.
   now constructor.
 Qed.
 
@@ -42,9 +42,9 @@ Qed.
 Goal forall A s, s :: A |-c neg (neg s).
 Proof.
   intros A s.
-  apply intr.
-  apply elim with (s := s).
-  all: apply assm.
+  apply ndc_intr.
+  apply ndc_elim with (s := s).
+  all: apply ndc_assm.
   all: firstorder.
 Qed.
 
@@ -54,9 +54,9 @@ Qed.
 
 Goal [ neg (neg bot) ] |-c bot.
 Proof.
-  apply elim with (s := neg bot).
-  - apply assm. firstorder.
-  - apply intr. apply assm. firstorder.
+  apply ndc_elim with (s := neg bot).
+  - apply ndc_assm. firstorder.
+  - apply ndc_intr. apply ndc_assm. firstorder.
 Qed.
 
 (* Question 1.1.b.4 *)
@@ -64,10 +64,10 @@ Qed.
 Goal forall A s, A |-c (neg (neg s)) ~> s.
 Proof.
   intros A s.
-  apply intr.
-  apply cntr.
-  apply elim with (s := neg s).
-  all: apply assm.
+  apply ndc_intr.
+  apply ndc_cntr.
+  apply ndc_elim with (s := neg s).
+  all: apply ndc_assm.
   all: firstorder.
 Qed.
 
@@ -77,14 +77,14 @@ Fact Weakc A B s :
   A |-c s -> incl A B -> B |-c s.
 Proof.
   intros hs.
-  induction hs as [ A s IH | A s t hs IH | A s t hst IHst hs IHs | A s hs IH ] in B |- *.
+  induction hs as [ A s hs | A s t hs IH | A s t hst IHst hs IHs | A s hs IH ] in B |- *.
   all: intros hincl.
-  - apply assm. now apply hincl.
-  - apply intr. apply IH. firstorder.
-  - apply elim with (s := s).
+  - apply ndc_assm. now apply hincl.
+  - apply ndc_intr. apply IH. firstorder.
+  - apply ndc_elim with (s := s).
     + now apply IHst.
     + now apply IHs.
-  - apply cntr. apply IH. firstorder.
+  - apply ndc_cntr. apply IH. firstorder.
 Qed.
 
 (* Question 1.1.d *)
@@ -126,10 +126,10 @@ Lemma soundness M A (s : form) :
   interp M s.
 Proof.
   intros DNE hs hc.
-  induction hs as [ A s IH | A s t hs IH | A s t hst IHst hs IHs | A s hs IH ]; simpl in *.
+  induction hs as [ A s hs | A s t hs IH | A s t hst IHst hs IHs | A s hs IH ]; simpl in *.
   - induction A as [ | t A IHA ].
     + contradiction.
-    + destruct hc. inversion IH; subst.
+    + destruct hc. inversion hs; subst.
       * assumption.
       * apply IHA; assumption.
  - intros hi. apply IH. split; assumption.
@@ -156,10 +156,10 @@ Lemma constructive_soundness M A (s : form) :
   A |-c s -> ctx_interp M A -> ~~ interp M s.
 Proof.
   intros hs hc nhi.
-  induction hs as [ A s IH | A s t hs IH | A s t hst IHst hs IHs | A s hs IH ]; simpl in *.
+  induction hs as [ A s hs | A s t hs IH | A s t hst IHst hs IHs | A s hs IH ]; simpl in *.
   - induction A as [ | t A IHA ].
     + contradiction.
-    + destruct hc. inversion IH; subst.
+    + destruct hc. inversion hs; subst.
       * now apply nhi.
       * apply IHA; assumption.
   - apply nhi. intros his. exfalso. apply IH.
@@ -185,33 +185,3 @@ Proof.
 
   now apply (constructive_soundness M [] bot hbot hc).
 Qed.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
