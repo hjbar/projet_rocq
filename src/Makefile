@@ -7,7 +7,7 @@ clean: Makefile.coq
 Makefile.coq:
 	coq_makefile -f _CoqProject -o Makefile.coq
 
-fullclean:
+fullclean: clean
 	rm Makefile.coq
 	rm Makefile.coq.conf
 

@@ -20,10 +20,10 @@ Reserved Notation "A |-c s" (at level 70).
 (* Question 1.1.a. *)
 
 Inductive ndc : list form -> form -> Prop :=
-  | ndc_assm (A : list form) (s : form) : In s A -> ndc A s
-  | ndc_intr (A : list form) (s : form) (t : form) : ndc (s :: A) t -> ndc A (s ~> t)
-  | ndc_elim (A : list form) (s : form) (t : form) : ndc A (s ~> t) -> ndc A s -> ndc A t
-  | ndc_cntr (A : list form) (s : form) : ndc (neg s :: A) bot -> ndc A s.
+  | ndc_assm A s : In s A -> ndc A s
+  | ndc_intr A s t : ndc (s :: A) t -> ndc A (s ~> t)
+  | ndc_elim A s t : ndc A (s ~> t) -> ndc A s -> ndc A t
+  | ndc_cntr A s : ndc (neg s :: A) bot -> ndc A s.
 
 Notation "A |-c s" := (ndc A s) (at level 70).
 

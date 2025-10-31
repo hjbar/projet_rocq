@@ -8,10 +8,12 @@ Import ListNotations.
 
 (* Question 2.1.a *)
 
+Reserved Notation "A |-m s" (at level 70).
+
 Inductive ndm : list form -> form -> Prop :=
-  | ndm_assm (A : list form) (s : form) : In s A -> ndm A s
-  | ndm_intr (A : list form) (s : form) (t : form) : ndm (s :: A) t -> ndm A (s ~> t)
-  | ndm_elim (A : list form) (s : form) (t : form) : ndm A (s ~> t) -> ndm A s -> ndm A t.
+  | ndm_assm A s : In s A -> ndm A s
+  | ndm_intr A s t : ndm (s :: A) t -> ndm A (s ~> t)
+  | ndm_elim A s t : ndm A (s ~> t) -> ndm A s -> ndm A t.
 
 Notation "A |-m s" := (ndm A s) (at level 70).
 
