@@ -1,6 +1,6 @@
 (* Exercice 2 : Minimal propositional logic *)
 
-From PRFA Require Import ex1.
+From Project Require Import ex1.
 From Stdlib Require Import List.
 Import ListNotations.
 

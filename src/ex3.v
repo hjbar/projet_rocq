@@ -1,9 +1,7 @@
 (* Exercice 3 : Cut Elimination *)
 
-From PRFA Require Import ex1.
-From PRFA Require Import ex2.
-From Stdlib Require Import Program.Equality.
-From Stdlib Require Import List.
+From Project Require Import ex1 ex2.
+From Stdlib Require Import List Program.Equality.
 Import ListNotations.
 
 (* Definition of |-cf and |-ae *)
@@ -12,12 +10,12 @@ Reserved Notation "A |-cf s" (at level 70).
 Reserved Notation "A |-ae s" (at level 70).
 
 Inductive cf : list form -> form -> Prop :=
-| cf_intr A s t : cf (s :: A) t -> cf A (s ~> t)
-| cf_frae A s : ae A s -> cf A s
+  | cf_intr A s t : cf (s :: A) t -> cf A (s ~> t)
+  | cf_frae A s : ae A s -> cf A s
 
 with ae : list form -> form -> Prop :=
-| ae_elim A s t : ae A (s ~> t) -> cf A s -> ae A t
-| ae_assm A s : In s A -> ae A s.
+  | ae_elim A s t : ae A (s ~> t) -> cf A s -> ae A t
+  | ae_assm A s : In s A -> ae A s.
 
 Notation "A |-cf s" := (cf A s) (at level 70).
 Notation "A |-ae s" := (ae A s) (at level 70).
@@ -212,22 +210,3 @@ Proof.
     simpl. assumption.
   + eapply cutfree_consistency. apply hs.
 Qed.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
