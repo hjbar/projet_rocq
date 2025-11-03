@@ -268,8 +268,10 @@ Section typing.
     - inversion hs as [ | ?? t ? hts ht | | ]; subst.
       apply typ_app with (s := t). apply IH.
       all: assumption.
-    - admit.
-  Admitted.
+    - inversion hs as [ | ?? t ? hts ht | | ]; subst.
+      apply typ_app with (s := t). 2: apply IH.
+      all: assumption.
+  Qed.
 
   (* Question 4.3.e *)
 
@@ -318,12 +320,11 @@ Proof.
   intros hsn.
   remember (e1 e2) as e.
   generalize dependent e1.
-  induction hsn as [ e3 hsn IH ].
+  destruct hsn as [ e3 hsn ].
   intros e1 eq; subst.
   constructor.
   intros e3 hr.
   apply hsn.
-  admit.
 Admitted.
 
 (* Question 4.3.h *)
@@ -359,14 +360,14 @@ Proof.
   3-4: intros bot.
   3-4: apply bot.
   - destruct n; simpl in *. all: discriminate.
- - destruct IH1 as [ [ e1' hr ] | hne1 ].
+  - destruct IH1 as [ [ e1' hr ] | hne1 ].
     + left. exists (e1' e2). apply red_appl. apply hr.
     + destruct IH2 as [ [ e2' hr ] | hne2 ].
       * left. exists (e1 e2'). apply red_appr. apply hr.
       * right. intros h. destruct e1; simpl in *.
         1-2: contradiction.
         -- apply hne1. split.
-        -- apply hne2. admit.
+        -- admit.
 Admitted.
 
 (* Part 4.4 : Normalisation *)
@@ -413,7 +414,9 @@ Proof.
       * apply H.
         -- assumption.
         -- admit.
-      * admit.
+      * apply H.
+        -- admit.
+        -- admit.
 Admitted.
 
 (* Lemma 9 *)
@@ -437,7 +440,10 @@ Proof.
   - split.
   - intros e' hr. inversion hr; subst; simpl in *.
     + assumption.
-    + admit.
+    + destruct (logical_relation s (e1 e2)) as [ lr1 [ lr2 lr3 ] ].
+      apply lr2.
+      * admit.
+      * admit.
     + admit.
 Admitted.
 

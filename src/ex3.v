@@ -163,22 +163,22 @@ Lemma no_dne_apply A :
   ~ ([ neg (neg s) ] |-ae apply A s).
 Proof.
   intros s hs.
-
   remember [ neg (neg s) ] as B.
   remember (apply A s) as f eqn:e.
-
   generalize dependent A.
   induction hs as [ B s1 s2 hst IHst hs | B s1 hs ]; subst.
   all: intros A e.
-  all: subst.
+  all: subst; simpl in *.
   - apply IHst with (A := s1 :: A); simpl.
     all: reflexivity.
-  - destruct A as [ | t A ]; simpl in *.
-    + destruct hs as [ h | h ]. all: inversion h.
-    + destruct hs as [ h | h ].
-      * admit.
-      * contradiction.
-Admitted.
+  - destruct hs as [ h | bot ].
+    2: contradiction.
+    destruct A as [ | t A ]; simpl in *.
+    1: discriminate.
+    destruct A as [ | u A ]; simpl in *.
+    + discriminate.
+    + discriminate.
+Qed.
 
 (* Theorem 7 *)
 
