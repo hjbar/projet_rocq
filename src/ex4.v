@@ -174,12 +174,12 @@ Proof.
   intros h x y hsnx hsny.
   induction hsnx as [ x hsnx IHx ].
   induction hsny as [ y hsny IHy ].
-  apply (h x y).
+  apply h.
   - apply hsnx.
   - apply IHx.
   - apply hsny.
   - intros b hrb. apply (IHy b hrb).
-    intros a hra. admit.
+    intros a hra.
 Admitted.
 
 (* Part 4.3 : Combinatory Logic *)
@@ -320,12 +320,13 @@ Proof.
   intros hsn.
   remember (e1 e2) as e.
   generalize dependent e1.
-  destruct hsn as [ e3 hsn ].
-  intros e1 eq; subst.
-  constructor.
-  intros e3 hr.
-  apply hsn.
-Admitted.
+  induction hsn as [ e3 hsn IH ].
+  all: intros e1 eq. all: subst.
+  constructor. intros e3 hr.
+  apply IH with (y := e3 e2) (e1 := e3).
+  - apply red_appl. apply hr.
+  - reflexivity.
+Qed.
 
 (* Question 4.3.h *)
 
@@ -356,25 +357,20 @@ Lemma progress e s :
 Proof.
   intros hs.
   induction hs as [ n s eq | e1 e2 s t he1 IH1 he2 IH2 | s t | s t u ]; simpl in *.
-  3-4: right.
-  3-4: intros bot.
-  3-4: apply bot.
-  - destruct n; simpl in *. all: discriminate.
-  - destruct IH1 as [ [ e1' hr ] | hne1 ].
-    + left. exists (e1' e2). apply red_appl. apply hr.
-    + destruct IH2 as [ [ e2' hr ] | hne2 ].
-      * left. exists (e1 e2'). apply red_appr. apply hr.
-      * right. intros h. destruct e1; simpl in *.
-        1-2: contradiction.
-        -- apply hne1. split.
-        -- admit.
+  3-4: right. 3-4: intros bot; apply bot.
+  1: destruct n; simpl in *. 1-2: discriminate.
+  destruct IH1 as [ [ e1' hr ] | hne1 ].
+  - left. exists (e1' e2). apply red_appl. apply hr.
+  - destruct IH2 as [ [ e2' hr ] | hne2 ].
+    + left. exists (e1 e2'). apply red_appr. apply hr.
+    + right. intros h. destruct e1; simpl in *; try contradiction.
 Admitted.
 
 (* Part 4.4 : Normalisation *)
 
 (* Definition 1 *)
 
-Fixpoint semantic (e : term) (s : form)  : Prop :=
+Fixpoint semantic (e : term) (s : form) : Prop :=
   match s with
   | var _ => SN e
   | bot => SN e
@@ -388,8 +384,7 @@ Theorem logical_relation (s : form) (e : term) :
   /\ (semantic e s -> forall e', e >-* e' -> semantic e' s)
   /\ (neutral e -> (forall e', e >- e' -> semantic e' s) -> semantic e s).
 Proof.
-  revert e.
-  induction s as [ x | | s1 IHs1 s2 IHs2 ]; intros e; simpl in *.
+  induction s as [ x | | s1 IHs1 s2 IHs2 ] in e |- *; simpl in *.
   (* proof of (1) for var x and bot *)
   1-2: split. 1,3: trivial.
   (* proof of (2) for var x and bot *)
@@ -404,20 +399,19 @@ Proof.
   - intros h e' hr e1 hsem. destruct (IHs2 (e e1)) as [ IH1s2 [ IH2s2 IH3s2 ] ]. apply IH2s2.
     + apply h. apply hsem.
     + apply app_red. apply hr.
-  - intros hne H e1 hsem. apply IHs1 in hsem.
-    generalize dependent e1.
-    induction 1 as [ e1' IH1 IH2 ]. apply IHs2.
+  - intros hne H e1 hsem.
+    assert (hsne1 : SN e1).
+    { apply IHs1. apply hsem. }
+    induction hsne1 as [ e1 IH1 IH2 ]. apply IHs2.
     + apply neutral_app. apply hne.
-    + intros e' hr. inversion hr; subst; simpl in *.
+    + intros e' hr. inversion hr as [ | | ? e3 ? hre3 | ?? e1' hre1 ]; subst; simpl in *.
       * contradiction.
       * contradiction.
-      * apply H.
-        -- assumption.
-        -- admit.
-      * apply H.
-        -- admit.
-        -- admit.
-Admitted.
+      * apply H. all: assumption.
+      * apply IH2. apply hre1.
+        destruct (IHs1 e1) as [ IH1s1 [ IH2s1 IH3s1 ] ]. apply IH2s1.
+        apply hsem. constructor. apply hre1.
+Qed.
 
 (* Lemma 9 *)
 
@@ -438,13 +432,18 @@ Proof.
   intros a b h1 h2 h3 h4.
   apply logical_relation; simpl in *.
   - split.
-  - intros e' hr. inversion hr; subst; simpl in *.
+  - intros e' hr. inversion hr as [ | | ? e3 ? hre3 | ?? e2' hre1 ]; subst; simpl in *.
     + assumption.
-    + destruct (logical_relation s (e1 e2)) as [ lr1 [ lr2 lr3 ] ].
+    + inversion hre3 as [ | | ??? h | ?? e2' hre1 ]; subst; simpl in *.
+      * inversion h.
+      * destruct (logical_relation s (K e1 e2)) as [ lr1 [ lr2 lr3 ] ].
+        apply lr2.
+        -- eapply h2. admit.
+        -- constructor. apply hr.
+    + destruct (logical_relation s (K e1 e2)) as [ lr1 [ lr2 lr3 ] ].
       apply lr2.
       * admit.
-      * admit.
-    + admit.
+      * constructor. apply hr.
 Admitted.
 
 (* Lemma 10 *)
