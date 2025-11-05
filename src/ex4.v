@@ -172,15 +172,17 @@ Lemma SN_on_double_induction [A B : Type] [R1 : A -> A -> Prop] [R2 : B -> B -> 
     SN_on R1 x -> SN_on R2 y -> P x y.
 Proof.
   intros h x y hsnx hsny.
+  generalize dependent y.
   induction hsnx as [ x hsnx IHx ].
+  intros y hsny.
   induction hsny as [ y hsny IHy ].
   apply h.
   - apply hsnx.
-  - apply IHx.
+  - intros a hra. apply (IHx a hra).
+    constructor. apply hsny.
   - apply hsny.
-  - intros b hrb. apply (IHy b hrb).
-    intros a hra.
-Admitted.
+  - apply IHy.
+Qed.
 
 (* Part 4.3 : Combinatory Logic *)
 
@@ -357,14 +359,21 @@ Lemma progress e s :
 Proof.
   intros hs.
   induction hs as [ n s eq | e1 e2 s t he1 IH1 he2 IH2 | s t | s t u ]; simpl in *.
-  3-4: right. 3-4: intros bot; apply bot.
+  3-4: right; intros bot; apply bot.
   1: destruct n; simpl in *. 1-2: discriminate.
   destruct IH1 as [ [ e1' hr ] | hne1 ].
   - left. exists (e1' e2). apply red_appl. apply hr.
   - destruct IH2 as [ [ e2' hr ] | hne2 ].
     + left. exists (e1 e2'). apply red_appr. apply hr.
-    + right. intros h. destruct e1; simpl in *; try contradiction.
-Admitted.
+    + destruct e1 as [ | | | e1 e1' ]; simpl in *.
+      all: firstorder.
+      destruct e1 as [ | | | e1 e1'' ]; simpl in *.
+      all: firstorder.
+      * left. exists e1'. apply red_axmK.
+      * destruct e1 as [ | | | e1 e1''' ]; simpl in *.
+        all: firstorder.
+        left. exists (e1'' e2 (e1' e2)). apply red_axmS.
+Qed.
 
 (* Part 4.4 : Normalisation *)
 
@@ -442,7 +451,7 @@ Proof.
         -- constructor. apply hr.
     + destruct (logical_relation s (K e1 e2)) as [ lr1 [ lr2 lr3 ] ].
       apply lr2.
-      * admit.
+      * eapply h2. admit.
       * constructor. apply hr.
 Admitted.
 

@@ -3,6 +3,7 @@ all: Makefile.coq
 
 clean: Makefile.coq
 	$(MAKE) -f Makefile.coq clean
+	rm -f *.crashrocqide
 
 Makefile.coq:
 	coq_makefile -f _CoqProject -o Makefile.coq
