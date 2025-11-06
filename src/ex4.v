@@ -435,31 +435,125 @@ Proof.
   assert (hsne2 : SN e2).
   { eapply logical_relation. apply hseme2. }
 
-  eapply SN_on_double_induction with (R1 := red) (R2 := red); subst.
-  2-3: eassumption.
+  generalize dependent e2.
+  induction hsne1 as [ e1 hsne1 IH1 ].
+  intros e2 hseme2 hsne2.
+  induction hsne2 as [ e2 hsne2 IH2 ].
 
-  intros a b h1 h2 h3 h4.
   apply logical_relation; simpl in *.
-  - split.
-  - intros e' hr. inversion hr as [ | | ? e3 ? hre3 | ?? e2' hre1 ]; subst; simpl in *.
+  trivial.
+  intros e' hr.
+  inversion hr as [ | | ? e3 ? hre3 | ?? e2' hre1 ]; subst; simpl in *.
+  - assumption.
+  - inversion hre3 as [ | | ??? h | ?? e1' ]; subst; simpl in *.
+    + inversion h.
+    + apply IH1.
+      * assumption.
+      * destruct (logical_relation s e1) as [ lr1 [ lr2 lr3 ] ].
+        apply lr2. 2: constructor. all: assumption.
+      * assumption.
+      * constructor. apply hsne2.
+  - apply IH2.
     + assumption.
-    + inversion hre3 as [ | | ??? h | ?? e2' hre1 ]; subst; simpl in *.
-      * inversion h.
-      * destruct (logical_relation s (K e1 e2)) as [ lr1 [ lr2 lr3 ] ].
-        apply lr2.
-        -- eapply h2. admit.
-        -- constructor. apply hr.
-    + destruct (logical_relation s (K e1 e2)) as [ lr1 [ lr2 lr3 ] ].
-      apply lr2.
-      * eapply h2. admit.
-      * constructor. apply hr.
-Admitted.
+    + destruct (logical_relation t e2) as [ lr1 [ lr2 lr3 ] ].
+      apply lr2. 2: constructor. all: assumption.
+Qed.
 
 (* Lemma 10 *)
+
+Lemma SN_on_triple_induction
+  [A B C : Type]
+  [R1 : A -> A -> Prop]
+  [R2 : B -> B -> Prop]
+  [R3 : C -> C -> Prop]
+  (P : A -> B -> C -> Prop) :
+    (forall (a : A) (b : B) (c : C),
+      (forall (a' : A), R1 a a' -> SN_on R1 a') ->
+      (forall (a' : A), R1 a a' -> P a' b c) ->
+      (forall (b' : B), R2 b b' -> SN_on R2 b') ->
+      (forall (b' : B), R2 b b' -> P a b' c) ->
+      (forall (c' : C), R3 c c' -> SN_on R3 c') ->
+      (forall (c' : C), R3 c c' -> P a b c') ->
+      P a b c) ->
+    forall (x : A) (y : B) (z : C),
+      SN_on R1 x -> SN_on R2 y -> SN_on R3 z -> P x y z.
+Proof.
+  intros h x y z hsnx hsny hsnz.
+  generalize dependent z.
+  generalize dependent y.
+  induction hsnx as [ x hsnx IHx ].
+  intros y hsny.
+  induction hsny as [ y hsny IHy ].
+  intros z hsnz.
+  induction hsnz as [ z hsnz IHz ].
+  apply h.
+  - apply hsnx.
+  - intros a hra. apply (IHx a hra).
+    + constructor. apply hsny.
+    + constructor. apply hsnz.
+  - apply hsny.
+  - intros b hrb. apply (IHy b hrb).
+    constructor. apply hsnz.
+  - apply hsnz.
+  - apply IHz.
+Qed.
 
 Lemma semantic_for_S s t u :
   semantic S ((s ~> t ~> u) ~> (s ~> t) ~> s ~> u).
 Proof.
+  intros e1 hseme1 e2 hseme2 e3 hseme3.
+
+  assert (hsne1 : SN e1).
+  { eapply logical_relation. apply hseme1. }
+
+  assert (hsne2 : SN e2).
+  { eapply logical_relation. apply hseme2. }
+
+  assert (hsne3 : SN e3).
+  { eapply logical_relation. apply hseme3. }
+
+  generalize dependent e3.
+  generalize dependent e2.
+  induction hsne1 as [ e1 hsne1 IH1 ].
+  intros e2 hseme2 hsne2.
+  induction hsne2 as [ e2 hsne2 IH2 ].
+  intros e3 hseme3 hsne3.
+  induction hsne3 as [ e3 hsne3 IH3 ].
+
+  apply logical_relation; simpl in *.
+  trivial.
+  intros e' hr.
+  inversion hr as [ | | ? e4 ? hre4 | ?? e4 hre4 ]; subst; simpl in *.
+  - apply hseme1.
+    + assumption.
+    + apply hseme2. assumption.
+  - inversion hre4; subst; simpl in *.
+    + inversion H2; subst; simpl in *.
+      * inversion H3; subst; simpl in *.
+      * admit.
+    + apply IH1.
+      * admit.
+      * admit.
+      * admit.
+      * admit.
+      * assumption.
+      * constructor. assumption.
+  - inversion hre4; subst; simpl in *.
+    apply IH3.
+    + apply red_axmK.
+    + admit.
+    + destruct (logical_relation u (S e1 e2 (S e0 e5 e6))) as [ lr1 [ lr2 lr3 ] ].
+      apply lr2.
+      * admit.
+      * constructor. assumption.
+    + destruct (logical_relation u (S e1 e2 (e0 e5))) as [ lr1 [ lr2 lr3 ] ].
+      apply lr2.
+      * admit.
+      * constructor. assumption.
+    + destruct (logical_relation u (S e1 e2 (e0 e5))) as [ lr1 [ lr2 lr3 ] ].
+      apply lr2.
+      * admit.
+      * constructor. assumption.
 Admitted.
 
 (* Theorem 11 *)
