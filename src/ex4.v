@@ -531,23 +531,26 @@ Proof.
   - inversion hre4 as [ | | ??? hr1 | ?? e1' hr1 ]; subst; simpl in *.
     + inversion hr1 as [ | | ??? hr2 | ??? hr2 ]; subst; simpl in *.
       * inversion hr2.
-      * apply IHe1.
-        -- assumption.
-        -- admit.
-        -- assumption.
-        -- assumption.
+      * apply IHe1. all: try assumption.
+        intros e5 hseme5 e6 hseme6.
+        destruct (logical_relation u (e1 e5 e6)) as [ lr1 [ lr2 lr3 ] ].
+        apply lr2.
+        -- apply hseme1. all: assumption.
+        -- apply app_red. apply app_red. constructor. assumption.
     + apply IHe2.
-      * assumption.
-      * assumption.
-      * intros e4 hseme4. admit.
-      * assumption.
+      all: try assumption.
+      intros e5 hseme5.
+      destruct (logical_relation t (e2 e5)) as [ lr1 [ lr2 lr3 ] ].
+      apply lr2.
+      * apply hseme2. assumption.
+      * apply app_red. constructor. assumption.
   - apply IHe3.
     + assumption.
     + assumption.
     + assumption.
     + destruct (logical_relation s e3) as [ lr1 [ lr2 lr3 ] ].
       apply lr2. 2: constructor. all: assumption.
-Admitted.
+Qed.
 
 (* Theorem 11 *)
 

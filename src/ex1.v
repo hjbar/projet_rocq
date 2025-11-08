@@ -61,9 +61,9 @@ Qed.
 
 (* Question 1.1.b.4 *)
 
-Goal forall A s, A |-c (neg (neg s)) ~> s.
+Lemma dne_classical A s :
+  A |-c (neg (neg s)) ~> s.
 Proof.
-  intros A s.
   apply ndc_intr.
   apply ndc_cntr.
   apply ndc_elim with (s := neg s).

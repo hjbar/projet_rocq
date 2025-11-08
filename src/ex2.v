@@ -137,16 +137,6 @@ Qed.
 
 Definition dne s := ((s ~> bot) ~> bot) ~> s.
 
-Lemma dne_classical s :
-  [] |-c dne s.
-Proof.
-  apply ndc_intr.
-  apply ndc_cntr.
-  apply ndc_elim with (s := neg s).
-  all: apply ndc_assm.
-  all: firstorder.
-Qed.
-
 Lemma consistency_of_dne s :
   ~ ([] |-m neg (dne s)).
 Proof.
