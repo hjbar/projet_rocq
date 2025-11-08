@@ -5,6 +5,8 @@
 From Stdlib Require Import List.
 Import ListNotations.
 
+Set Default Goal Selector "!".
+
 Inductive form : Type :=
   | var (x : nat)
   | bot
@@ -34,7 +36,8 @@ Proof.
   intros A s.
   apply ndc_intr.
   apply ndc_assm.
-  now constructor.
+  constructor.
+  reflexivity.
 Qed.
 
 (* Question 1.1.b.2 *)
@@ -77,13 +80,15 @@ Fact Weakc A B s :
   A |-c s -> incl A B -> B |-c s.
 Proof.
   intros hs.
-  induction hs as [ A s hs | A s t hs IH | A s t hst IHst hs IHs | A s hs IH ] in B |- *.
+  induction hs as [ | ???? IH | ???? IHst ? IHs | ??? IH ] in B |- *.
   all: intros hincl.
-  - apply ndc_assm. now apply hincl.
-  - apply ndc_intr. apply IH. firstorder.
+  - apply ndc_assm. apply hincl. assumption.
+  - apply ndc_intr. apply IH. apply incl_cons.
+    + firstorder.
+    + apply incl_tl. assumption.
   - apply ndc_elim with (s := s).
-    + now apply IHst.
-    + now apply IHs.
+    + apply IHst. assumption.
+    + apply IHs. assumption.
   - apply ndc_cntr. apply IH. firstorder.
 Qed.
 
@@ -120,21 +125,20 @@ Fixpoint ctx_interp (M : Model) (A : list form) : Prop :=
 (* Question 1.2.c *)
 
 Lemma soundness M A (s : form) :
-  (forall P, ~~P -> P) ->
-  A |-c s ->
-  ctx_interp M A ->
-  interp M s.
+  (forall P, ~~P -> P) -> A |-c s -> ctx_interp M A -> interp M s.
 Proof.
   intros DNE hs hc.
-  induction hs as [ A s hs | A s t hs IH | A s t hst IHst hs IHs | A s hs IH ]; simpl in *.
-  - induction A as [ | t A IHA ].
+  induction hs as [ ?? hs | ???? IH | ???? IHst ? IHs | ??? IH ]; simpl in *.
+  - induction A as [ | t A IHA ]; simpl in *.
     + contradiction.
     + destruct hc. inversion hs; subst.
       * assumption.
-      * apply IHA; assumption.
- - intros hi. apply IH. split; assumption.
- - apply (IHst hc (IHs hc)).
- - apply DNE. intros nhi. apply IH. split; assumption.
+      * apply IHA. all: assumption.
+ - intros hi. apply IH. split. all: assumption.
+ - apply IHst.
+   + assumption.
+   + apply IHs. assumption.
+ - apply DNE. intros nhi. apply IH. split. all: assumption.
 Qed.
 
 (* Question 1.2.d *)
@@ -144,10 +148,11 @@ Lemma classical_consistency :
 Proof.
   intros DNE hbot.
   set (M := fun (_ : nat) => True).
-
-  assert (hc : ctx_interp M []) by firstorder.
-
-  apply (soundness M [] bot DNE hbot hc).
+  change (interp M bot).
+  apply soundness with (A := []); simpl.
+  - assumption.
+  - assumption.
+  - split.
 Qed.
 
 (* Question 1.2.e *)
@@ -156,21 +161,21 @@ Lemma constructive_soundness M A (s : form) :
   A |-c s -> ctx_interp M A -> ~~ interp M s.
 Proof.
   intros hs hc nhi.
-  induction hs as [ A s hs | A s t hs IH | A s t hst IHst hs IHs | A s hs IH ]; simpl in *.
-  - induction A as [ | t A IHA ].
+  induction hs as [ ?? hs | ???? IH | ???? IHst ? IHs | ??? IH ]; simpl in *.
+  - induction A as [ | t A IHA ]; simpl in *.
     + contradiction.
     + destruct hc. inversion hs; subst.
-      * now apply nhi.
-      * apply IHA; assumption.
+      * congruence.
+      * apply IHA. all: assumption.
   - apply nhi. intros his. exfalso. apply IH.
-    + split; assumption.
-    + intros hit. now apply nhi.
+    + split. all: assumption.
+    + intros hit. apply nhi. intros. assumption.
   - apply (IHs hc). intros his.
     apply (IHst hc). intros hist.
-    apply (nhi (hist his)).
+    apply nhi. apply hist. apply his.
   - apply IH.
-    + split; assumption.
-    + now intros bot.
+    + split. all: assumption.
+    + intros bot. apply bot.
 Qed.
 
 (* Question 1.2.f *)
@@ -180,8 +185,8 @@ Lemma constructive_consistency :
 Proof.
   intros hbot.
   set (M := fun (_ : nat) => True).
-
-  assert (hc : ctx_interp M []) by firstorder.
-
-  now apply (constructive_soundness M [] bot hbot hc).
+  apply (constructive_soundness M [] bot); simpl.
+  - assumption.
+  - split.
+  - intros bot. apply bot.
 Qed.

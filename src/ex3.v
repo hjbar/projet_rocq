@@ -4,6 +4,8 @@ From Project Require Import ex1 ex2.
 From Stdlib Require Import List Program.Equality.
 Import ListNotations.
 
+Set Default Goal Selector "!".
+
 (* Definition of |-cf and |-ae *)
 
 Reserved Notation "A |-cf s" (at level 70).
@@ -35,29 +37,31 @@ Proof.
   - intros A s t hcft h B hincl.
     apply cf_intr. apply h. firstorder.
   - intros A s haes h B hincl.
-    apply cf_frae. now apply h.
+    apply cf_frae. apply h. assumption.
   - intros A s t haest h1 hcfs h2 B hincl.
     apply ae_elim with (s := s).
-    + now apply h1.
-    + now apply h2.
+    + apply h1. assumption.
+    + apply h2. assumption.
   - intros A s hin B hincl.
-    apply ae_assm. now apply hincl.
+    apply ae_assm. apply hincl. assumption.
 Qed.
 
 Lemma Weakcf A B s :
   A |-cf s -> incl A B -> B |-cf s.
 Proof.
   intros hcfs hincl.
-  destruct Weak_mut as [ hcf hae ].
-  apply (hcf A s hcfs B hincl).
+  destruct Weak_mut as [ hcf ].
+  apply hcf with (A := A).
+  all: assumption.
 Qed.
 
 Lemma Weakae A B s :
   A |-ae s -> incl A B -> B |-ae s.
 Proof.
   intros haes hincl.
-  destruct Weak_mut as [ hcf hae ].
-  apply (hae A s haes B hincl).
+  destruct Weak_mut as [ ? hae ].
+  apply hae with (A := A).
+  all: assumption.
 Qed.
 
 (* Definition of the cut-free syntactic model *)
@@ -66,7 +70,6 @@ Definition cutfree_syntactic_model : WModel.
 Proof.
   refine {|
     world := list form ;
-
     rel A B := incl A B ;
     bot_w A := A |-cf bot ;
     mu_w A x := A |-cf var x ;
@@ -87,31 +90,31 @@ Lemma cutfree_correctness_mut A s :
      (winterp cutfree_syntactic_model A s -> A |-cf s)
   /\ (A |-ae s -> winterp cutfree_syntactic_model A s).
 Proof.
-  induction s as [ x | | s1 IHs1 s2 IHs2 ] in A |- *; simpl; split.
+  induction s as [ | | s1 IHs1 ? IHs2 ] in A |- *; simpl; split.
   1,3: trivial.
-  1,2: intros haes. 1,2: now apply cf_frae.
+  1-2: intros haes. 1-2: apply cf_frae. 1-2: assumption.
   - intros h. apply cf_intr. apply IHs2. apply h.
-    + apply incl_tl. apply incl_refl.
+    + firstorder.
     + apply IHs1. apply ae_assm. firstorder.
   - intros haes A' hincl hi. apply IHs2. apply ae_elim with (s := s1).
     + apply Weakae with (A := A). all: assumption.
-    + apply IHs1. apply hi.
+    + apply IHs1. assumption.
 Qed.
 
 Lemma cutfree_correctness_cf A s :
   winterp cutfree_syntactic_model A s -> A |-cf s.
 Proof.
   intros hi.
-  destruct (cutfree_correctness_mut A s) as [ hcf hae ].
-  apply (hcf hi).
+  apply cutfree_correctness_mut.
+  assumption.
 Qed.
 
 Lemma cutfree_correctness_ae A s :
   A |-ae s -> winterp cutfree_syntactic_model A s.
 Proof.
   intros haes.
-  destruct (cutfree_correctness_mut A s) as [ hcf hae ].
-  apply (hae haes).
+  apply cutfree_correctness_mut.
+  assumption.
 Qed.
 
 (* Lemma 3 *)
@@ -119,12 +122,12 @@ Qed.
 Lemma cutfree_completeness_id A :
   ctx_winterp cutfree_syntactic_model A A.
 Proof.
-  induction A as [ | s A IHA ]; simpl.
+  induction A as [ | ? A ]; simpl.
   all: split.
   - apply cutfree_correctness_ae. apply ae_assm. firstorder.
   - apply ctx_monotonicity with (w := A); simpl.
-    + apply incl_tl. apply incl_refl.
-    + apply IHA.
+    + firstorder.
+    + assumption.
 Qed.
 
 (* Theorem 4 : Cut elimination *)
@@ -145,7 +148,7 @@ Lemma cutfree_consistency s :
 Proof.
   intros hs.
   remember [] as A.
-  induction hs as [ A s t hst IHst hs | A s hs ]; subst.
+  induction hs as [ ???? IHst | ]; subst; simpl in *.
   - apply IHst. reflexivity.
   - contradiction.
 Qed.
@@ -166,16 +169,16 @@ Proof.
   remember [ neg (neg s) ] as B.
   remember (apply A s) as f eqn:e.
   generalize dependent A.
-  induction hs as [ B s1 s2 hst IHst hs | B s1 hs ]; subst.
+  induction hs as [ ? s1 ?? IHst | ?? hs ]; subst.
   all: intros A e.
   all: subst; simpl in *.
   - apply IHst with (A := s1 :: A); simpl.
     all: reflexivity.
   - destruct hs as [ h | bot ].
     2: contradiction.
-    destruct A as [ | t A ]; simpl in *.
+    destruct A as [ | ? A ]; simpl in *.
     1: discriminate.
-    destruct A as [ | u A ]; simpl in *.
+    destruct A; simpl in *.
     + discriminate.
     + discriminate.
 Qed.
@@ -191,22 +194,22 @@ Proof.
   assert (hi : winterp cutfree_syntactic_model [] (neg (neg (var 0)) ~> var 0)).
   {
     eapply wsoundness.
-    - apply hs.
+    - eassumption.
     - apply cutfree_completeness_id.
   }
 
   assert (hcfs : [] |-cf neg (neg (var 0)) ~> var 0).
-  { apply cutfree_correctness_cf. apply hi. }
+  { apply cutfree_correctness_cf. assumption. }
 
   clear hs hi.
 
   remember [] as A.
   remember (neg (neg (var 0)) ~> var 0) as f eqn:e.
 
-  destruct hcfs as [ A s t hst | A s hs ]; subst.
+  destruct hcfs as [ A ?? hst | ]; subst.
   + inversion e. subst.
     inversion hst. subst.
-    apply no_dne_apply with (A := []).
-    simpl. assumption.
-  + eapply cutfree_consistency. apply hs.
+    apply no_dne_apply with (A := []); simpl.
+    assumption.
+  + eapply cutfree_consistency. eassumption.
 Qed.

@@ -4,6 +4,8 @@ From Project Require Import ex1.
 From Stdlib Require Import List.
 Import ListNotations.
 
+Set Default Goal Selector "!".
+
 (* Part 2.1 : Minimal natural deduction *)
 
 (* Question 2.1.a *)
@@ -23,13 +25,13 @@ Lemma Weakm A B s :
   A |-m s -> incl A B -> B |-m s.
 Proof.
   intros hs.
-  induction hs as [ A s hs | A s t hs IH | A s t hst IHst hs IHs ] in B |- *.
+  induction hs as [ | ???? IH | ???? IHst ? IHs ] in B |- *.
   all: intros hincl.
-  - apply ndm_assm. now apply hincl.
+  - apply ndm_assm. apply hincl. assumption.
   - apply ndm_intr. apply IH. firstorder.
   - apply ndm_elim with (s := s).
-    + now apply IHst.
-    + now apply IHs.
+    + apply IHst. assumption.
+    + apply IHs. assumption.
 Qed.
 
 (* Question 2.1.c *)
@@ -39,9 +41,9 @@ Lemma Implication A s :
 Proof.
   intros hs.
   induction hs.
-  - now apply ndc_assm.
-  - now apply ndc_intr.
-  - now apply ndc_elim with (s := s).
+  - apply ndc_assm. assumption.
+  - apply ndc_intr. assumption.
+  - apply ndc_elim with (s := s). all: assumption.
 Qed.
 
 (* Question 2.1.d *)
@@ -91,14 +93,13 @@ Lemma Friedman A s t :
   A |-c s -> map (trans t) A |-m trans t s.
 Proof.
   intros hs.
-  induction hs as [ A s hs | A s1 s2 hs IH | A s1 s2 hst IHst hs IHs | A s hs IH ]; simpl in *.
-  - apply ndm_assm. now apply in_map.
-  - now apply ndm_intr.
-  - apply ndm_elim with (s := trans t s1).
-    all: assumption.
+  induction hs as [ | | ? s1 | ? s ]; simpl in *.
+  - apply ndm_assm. apply in_map. assumption.
+  - apply ndm_intr. assumption.
+  - apply ndm_elim with (s := trans t s1). all: assumption.
   - apply ndm_elim with (s := (trans t s ~> t) ~> t).
-    + apply (DNE_Friedman (map (trans t) A) s t).
-    + now apply ndm_intr.
+    + apply DNE_Friedman.
+    + apply ndm_intr. assumption.
 Qed.
 
 (* Question 2.1.g *)
@@ -107,22 +108,22 @@ Lemma ground_trans_bot_id s :
   ground s -> trans bot s = s.
 Proof.
   intros hg.
-  induction s as [ x | | s1 IHs1 s2 IHs2 ]; simpl in *.
+  induction s as [ | | ? IHs1 ? IHs2 ]; simpl in *.
   - contradiction.
   - reflexivity.
   - destruct hg as [hgs1 hgs2].
-    now rewrite (IHs1 hgs1), (IHs2 hgs2).
+    rewrite (IHs1 hgs1). rewrite (IHs2 hgs2). reflexivity.
 Qed.
 
 Lemma ground_truths s :
   ground s -> ([] |-m s <-> [] |-c s).
 Proof.
   intros hg.
-  split; intros hs.
-  - now apply Implication.
-  - specialize (Friedman [] s bot hs).
-    simpl. intros hf.
-    now rewrite <- ground_trans_bot_id.
+  split. all: intros hs.
+  - apply Implication. assumption.
+  - rewrite <- ground_trans_bot_id.
+    + change (map (trans bot) [] |-m trans bot s). apply Friedman. assumption.
+    + assumption.
 Qed.
 
 (* Question 2.1.h *)
@@ -130,7 +131,8 @@ Qed.
 Lemma consistency_iff :
   [] |-m bot <-> [] |-c bot.
 Proof.
-  now apply (ground_truths bot).
+  apply ground_truths; simpl.
+  split.
 Qed.
 
 (* Question 2.1.i *)
@@ -141,17 +143,10 @@ Lemma consistency_of_dne s :
   ~ ([] |-m neg (dne s)).
 Proof.
   intros hmns.
-
-  assert (hcns : [] |-c neg (dne s)).
-  { apply (Implication [] (neg (dne s)) hmns). }
-
-  assert (hcs : [] |-c dne s).
-  { apply dne_classical. }
-
-  assert (hcbot : [] |-c bot).
-  { apply ndc_elim with (s := dne s). all: assumption. }
-
-  apply (constructive_consistency hcbot).
+  apply constructive_consistency.
+  apply ndc_elim with (s := dne s).
+  - apply Implication. assumption.
+  - apply dne_classical.
 Qed.
 
 (* Part 2.2 : World-based semantics *)
@@ -200,11 +195,11 @@ Lemma monotonicity M s w w' :
   w <=(M) w' -> winterp M w s -> winterp M w' s.
 Proof.
   intros hr hi.
-  induction s as [ x | | s1 IHs1 s2 IHs2 ]; simpl in *.
-  - apply (mu_mon M w w' x). all: assumption.
-  - apply (bot_mon M w w'). all: assumption.
+  induction s; simpl in *.
+  - apply mu_mon with (w1 := w). all: assumption.
+  - apply bot_mon with (w1 := w). all: assumption.
   - intros w'' hr' hi'. apply hi.
-    + apply (rel_trans M w w' w''); assumption.
+    + apply rel_trans with (w2 := w'). all: assumption.
     + assumption.
 Qed.
 
@@ -214,34 +209,33 @@ Lemma ctx_monotonicity M A w w' :
   w <=(M) w' -> ctx_winterp M w A -> ctx_winterp M w' A.
 Proof.
   intros hr hci.
-  induction A as [ | s A IHA ]; simpl in *.
+  induction A; simpl in *.
   - split.
   - destruct hci as [ hi hci ]. split.
-    + apply (monotonicity M s w w' hr hi).
-    + apply (IHA hci).
+    + apply monotonicity with (w := w). all: assumption.
+    + apply IHA. assumption.
 Qed.
 
 (* Question 2.2.f *)
 
 Lemma wsoundness M A s :
-  A |-m s ->
-    forall w,
-      ctx_winterp M w A -> winterp M w s.
+  A |-m s -> forall w, ctx_winterp M w A -> winterp M w s.
 Proof.
   intros hs.
-  induction hs as [ A s hs | A s t hs IH | A s t hst IHst hs IHs ]; simpl in *.
+  induction hs as [ A ? hs | ???? IH | ???? IHst ? IHs ]; simpl in *.
   all: intros w hci.
-  - induction A as [ | t A IHA ]; simpl in *.
+  - induction A as [ | ?? IHA ]; simpl in *.
     + contradiction.
     + destruct hci as [ hi hci ]. destruct hs as [ e | hin ]; subst.
-      * exact hi.
-      * apply (IHA hin hci).
+      * assumption.
+      * apply IHA. all: assumption.
   - intros w' hr hi. apply IH. split.
     + assumption.
-    + apply (ctx_monotonicity M A w w' hr hci).
-  - apply (IHst w hci).
+    + apply ctx_monotonicity with (w := w). all: assumption.
+  - apply IHst with (w := w).
+    + assumption.
     + apply rel_refl.
-    + apply (IHs w hci).
+    + apply IHs. assumption.
 Qed.
 
 (* Question 2.2.g *)
@@ -263,11 +257,9 @@ Lemma consistency :
   ~ ([] |-m bot).
 Proof.
   intros hbot.
-
-  assert (hc : ctx_winterp consistency_model tt []).
-  { simpl. split. }
-
-  apply (wsoundness consistency_model [] bot hbot tt hc).
+  apply (wsoundness consistency_model [] bot) with (w := tt); simpl.
+  - assumption.
+  - split.
 Qed.
 
 (* Question 2.2.i *)
@@ -304,18 +296,17 @@ Lemma dne_independant :
 Proof.
   intros hs.
 
-  assert (hc : ctx_winterp notdne_model false []).
-  { simpl. split. }
-
   assert (hi : winterp notdne_model false (dne (var 0))).
-  { apply (wsoundness notdne_model [] (dne (var 0)) (hs (var 0)) false hc). }
-
-  clear hc hs.
+  {
+    apply wsoundness with (A := []); simpl.
+    - apply hs.
+    - split.
+  }
 
   simpl in *.
-  apply (hi false); auto.
-  intros w ? h.
-  apply (h true); auto.
+  apply (hi false). 1: split.
+  intros ?? h.
+  apply (h true). all: auto.
 Qed.
 
 (* Part 2.3 : Completeness *)
@@ -346,15 +337,15 @@ Defined.
 Lemma correctness A s :
   winterp syntactic_model A s <-> A |-m s.
 Proof.
-  induction s as [ x | | s1 IHs1 s2 IHs2 ] in A |- *; simpl in *.
-  all: try reflexivity.
+  induction s as [ | | s1 IHs1 ? IHs2 ] in A |- *; simpl in *.
+  1-2: reflexivity.
   split.
   - intros h. apply ndm_intr. apply IHs2. apply h.
-    + apply incl_tl. apply incl_refl.
+    + firstorder.
     + apply IHs1. apply ndm_assm. firstorder.
   - intros hs B hincl hi. apply IHs2. apply ndm_elim with (s := s1).
     + apply Weakm with (A := A). all: assumption.
-    + apply IHs1. apply hi.
+    + apply IHs1. assumption.
 Qed.
 
 (* Question 2.3.c *)
@@ -364,15 +355,13 @@ Lemma completeness A s :
 Proof.
   assert (hc : ctx_winterp syntactic_model A A).
   {
-    induction A as [ | t A IHA ]; simpl.
+    induction A as [ | ? A ]; simpl.
     all: split.
     - apply correctness. apply ndm_assm. firstorder.
     - apply ctx_monotonicity with (w := A); simpl.
-      + apply incl_tl. apply incl_refl.
-      + apply IHA.
+      + firstorder.
+      + assumption.
   }
-  intros h.
-  apply correctness.
-  apply h.
-  apply hc.
+
+  intros h. apply correctness. apply h. assumption.
 Qed.
